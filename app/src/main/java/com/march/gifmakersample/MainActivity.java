@@ -12,7 +12,6 @@ import com.march.dev.uikit.selectimg.SelectImageActivity;
 import com.march.dev.utils.BitmapUtils;
 import com.march.dev.utils.GlideUtils;
 import com.march.dev.utils.PermissionUtils;
-import com.march.dev.utils.ToastUtils;
 import com.march.gifmaker.GifMaker;
 
 import org.greenrobot.eventbus.Subscribe;
@@ -21,9 +20,10 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Consumer;
@@ -33,6 +33,7 @@ import io.reactivex.schedulers.Schedulers;
 public class MainActivity extends BaseActivity {
 
     ImageView mImageView;
+    ExecutorService mExecutorService = Executors.newCachedThreadPool();
 
     @Override
     protected int getLayoutId() {
@@ -43,7 +44,7 @@ public class MainActivity extends BaseActivity {
     public void onInitViews(View view, Bundle saveData) {
         super.onInitViews(view, saveData);
         mImageView = getView(R.id.iv_image);
-
+        mExecutorService = Executors.newCachedThreadPool();
     }
 
 //    @OnClick({R.id.btn_compose})
@@ -56,7 +57,7 @@ public class MainActivity extends BaseActivity {
         super.onClickView(view);
         switch (view.getId()) {
             case R.id.btn_compose:
-                SelectImageActivity.start(mActivity, 10);
+                SelectImageActivity.start(mActivity, 20);
                 break;
         }
     }
@@ -66,62 +67,50 @@ public class MainActivity extends BaseActivity {
         return new int[]{R.id.btn_compose};
     }
 
-
     @Override
     protected String[] getPermission2Check() {
         return new String[]{PermissionUtils.PER_WRITE_EXTERNAL_STORAGE};
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMainEvent(SelectImageActivity.SelectImageEvent event) {
+    public void onMainEvent(final SelectImageActivity.SelectImageEvent event) {
         switch (event.getMessage()) {
             case SelectImageActivity.SelectImageEvent.ON_SUCCESS:
-
-                ToastUtils.show(event.mImageInfos.toString());
-
-                Observable.just(event.mImageInfos)
-                        .flatMap(new Function<List<ImageInfo>, ObservableSource<List<String>>>() {
+                final List<Bitmap> bitmaps = new ArrayList<>();
+                Observable.fromIterable(event.mImageInfos)
+                        .map(new Function<ImageInfo, Bitmap>() {
                             @Override
-                            public ObservableSource<List<String>> apply(@NonNull List<ImageInfo> imageInfos) throws Exception {
-                                List<String> paths = new ArrayList<>();
-                                for (ImageInfo imageInfo : imageInfos) {
-                                    paths.add(imageInfo.getPath());
-                                }
-                                return Observable.just(paths);
-                            }
-                        })
-                        .flatMap(new Function<List<String>, ObservableSource<List<Bitmap>>>() {
-                            @Override
-                            public ObservableSource<List<Bitmap>> apply(@NonNull List<String> strings) throws Exception {
-                                List<Bitmap> bitmaps = new ArrayList<>();
-                                for (String string : strings) {
-                                    bitmaps.add(BitmapUtils.decodeFile(string, 600, 600));
-                                }
-                                return Observable.just(bitmaps);
+                            public Bitmap apply(@NonNull ImageInfo imageInfo) throws Exception {
+                                return BitmapUtils.decodeFile(imageInfo.getPath(), 600, 600);
                             }
                         })
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Consumer<List<Bitmap>>() {
+                        .subscribe(new Consumer<Bitmap>() {
                             @Override
-                            public void accept(@NonNull List<Bitmap> bitmaps) throws Exception {
-                                String absolutePath = new File(Environment.getExternalStorageDirectory(), System.currentTimeMillis() + ".gif").getAbsolutePath();
-                                new GifMaker(100).makeGifInThread(bitmaps, absolutePath, new GifMaker.OnGifMakerListener() {
-                                    @Override
-                                    public void onMakeGifSucceed(String outPath) {
-                                        GlideUtils.with(mActivity, outPath).into(mImageView);
-                                    }
-                                });
-                            }
-                        }, new Consumer<Throwable>() {
-                            @Override
-                            public void accept(@NonNull Throwable throwable) throws Exception {
-                                throwable.printStackTrace();
+                            public void accept(@NonNull Bitmap bitmap) throws Exception {
+                                bitmaps.add(bitmap);
+                                if (bitmaps.size() == event.mImageInfos.size()) {
+                                    composeGif(bitmaps);
+                                }
                             }
                         });
 
                 break;
         }
 
+    }
+
+    private void composeGif(List<Bitmap> bitmaps) {
+        String absolutePath = new File(Environment.getExternalStorageDirectory(), System.currentTimeMillis() + ".gif").getAbsolutePath();
+        new GifMaker(100, mExecutorService)
+                .makeGifInThread(bitmaps, absolutePath, new GifMaker.OnGifMakerListener() {
+                    @Override
+                    public void onMakeGifSucceed(String outPath) {
+                        if (!isFinishing()) {
+                            GlideUtils.with(mActivity, outPath).into(mImageView);
+                        }
+                    }
+                });
     }
 }

@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
@@ -38,7 +38,7 @@ public class GifMaker {
     private List<LZWEncoderOrderHolder> mEncodeOrders; // 存放线程处理结果，待全部线程执行完使用
     private String                      mOutputPath;// GIF 保存路径
     private Handler                     mHandler; // 回调回主线程使用
-    private Executor                    mExecutor;  // 线程池
+    private ExecutorService             mExecutor;  // 线程池
 
     private long mStartWorkTimeStamp; // 开始时间
     private int  mCurrentWorkSize; // 当前剩余任务长度
@@ -51,12 +51,11 @@ public class GifMaker {
         void onMakeGifSucceed(String outPath);
     }
 
-
     public GifMaker(int delayTime) {
         this(delayTime, Executors.newCachedThreadPool());
     }
 
-    public GifMaker(int delayTime, Executor executor) {
+    public GifMaker(int delayTime, ExecutorService executor) {
 
         mFinalOutputStream = new ByteArrayOutputStream();
         mEncodeOrders = new ArrayList<>();
@@ -165,7 +164,7 @@ public class GifMaker {
         long timeCost = currentTimeMillis - mStartWorkTimeStamp;
         String msg = String.format(Locale.CHINA, "%d.%d s", timeCost / 1000, timeCost % 1000);
 
-        Log.i(TAG, (order == -1 ? "合成完成" : "完成第" + order + "帧") + " ,耗时:" + msg + (bitmap == null ? "" : ("bitmap [" + bitmap.getWidth() + "," + bitmap.getHeight() + "]")));
+        Log.i(TAG, (order == -1 ? "合成完成" : "完成第" + order + "帧") + ",耗时:" + msg + (bitmap == null ? "" : (" - bitmap [" + bitmap.getWidth() + "," + bitmap.getHeight() + "]")));
     }
 
 }
