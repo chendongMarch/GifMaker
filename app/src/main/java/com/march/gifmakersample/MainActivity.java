@@ -45,7 +45,7 @@ public class MainActivity extends BaseActivity {
         mImageView = getView(R.id.iv_image);
 
     }
-//
+
 //    @OnClick({R.id.btn_compose})
 //    public void click(View view) {
 //

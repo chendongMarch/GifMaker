@@ -125,7 +125,7 @@ public class GifMaker {
                 mThreadGifEncoder.finishThread(mOrder == (mTotalWorkSize - 1), holder.getLZWEncoder());
                 holder.setByteArrayOutputStream(mCurrentOutputStream);
                 mEncodeOrders.add(holder);
-                logCostTime(mOrder);
+                logCostTime(mOrder, mBitmap);
                 Util.recycleBitmaps(mBitmap);
                 workDone();
             } catch (Exception e) {
@@ -154,17 +154,18 @@ public class GifMaker {
             bosToFile.write(data);
             bosToFile.flush();
             bosToFile.close();
-            logCostTime(-1);
+            logCostTime(-1, null);
             mHandler.sendEmptyMessage(100);
         }
     }
 
 
-    private void logCostTime(int order) {
+    private void logCostTime(int order, Bitmap bitmap) {
         long currentTimeMillis = System.currentTimeMillis();
         long timeCost = currentTimeMillis - mStartWorkTimeStamp;
         String msg = String.format(Locale.CHINA, "%d.%d s", timeCost / 1000, timeCost % 1000);
-        Log.i(TAG, (order == -1 ? "合成完成" : "完成第" + order + "帧") + " ,耗时:" + msg);
+
+        Log.i(TAG, (order == -1 ? "合成完成" : "完成第" + order + "帧") + " ,耗时:" + msg + (bitmap == null ? "" : ("bitmap [" + bitmap.getWidth() + "," + bitmap.getHeight() + "]")));
     }
 
 }
