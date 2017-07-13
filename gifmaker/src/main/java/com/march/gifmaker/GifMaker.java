@@ -120,6 +120,7 @@ public class GifMaker {
         @Override
         public void run() {
             try {
+                Log.e(TAG, "开始编码第" + mOrder + "张");
                 LZWEncoderOrderHolder holder = mThreadGifEncoder.addFrame(mBitmap, mOrder);
                 mThreadGifEncoder.finishThread(mOrder == (mTotalWorkSize - 1), holder.getLZWEncoder());
                 holder.setByteArrayOutputStream(mCurrentOutputStream);

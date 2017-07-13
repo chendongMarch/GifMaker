@@ -92,7 +92,8 @@ public class MainActivity extends BaseActivity {
     }
 
     private void composeGif(List<Bitmap> bitmaps) {
-        String absolutePath = new File(Environment.getExternalStorageDirectory(), System.currentTimeMillis() + ".gif").getAbsolutePath();
+        String absolutePath = new File(Environment.getExternalStorageDirectory()
+                , System.currentTimeMillis() + ".gif").getAbsolutePath();
         new GifMaker(100, mExecutorService)
                 .makeGifInThread(bitmaps, absolutePath, new GifMaker.OnGifMakerListener() {
                     @Override
