@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import butterknife.BindView;
+import butterknife.OnClick;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
@@ -32,8 +34,9 @@ import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends BaseActivity {
 
-    ImageView mImageView;
-    ExecutorService mExecutorService = Executors.newCachedThreadPool();
+    @BindView(R.id.iv_image) ImageView mImageView;
+
+    private ExecutorService mExecutorService = Executors.newCachedThreadPool();
 
     @Override
     protected int getLayoutId() {
@@ -43,28 +46,16 @@ public class MainActivity extends BaseActivity {
     @Override
     public void onInitViews(View view, Bundle saveData) {
         super.onInitViews(view, saveData);
-        mImageView = getView(R.id.iv_image);
         mExecutorService = Executors.newCachedThreadPool();
     }
 
-//    @OnClick({R.id.btn_compose})
-//    public void click(View view) {
-//
-//    }
-
-    @Override
-    protected void onClickView(View view) {
-        super.onClickView(view);
+    @OnClick({R.id.btn_compose})
+    public void onClickView(View view) {
         switch (view.getId()) {
             case R.id.btn_compose:
                 SelectImageActivity.start(mActivity, 20);
                 break;
         }
-    }
-
-    @Override
-    protected int[] getViewsRegisterClickEvent() {
-        return new int[]{R.id.btn_compose};
     }
 
     @Override
@@ -98,7 +89,6 @@ public class MainActivity extends BaseActivity {
 
                 break;
         }
-
     }
 
     private void composeGif(List<Bitmap> bitmaps) {
